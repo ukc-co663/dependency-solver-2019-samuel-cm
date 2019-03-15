@@ -68,7 +68,7 @@ def dfs(state, commands):
         return
 
     if final(state):
-        print(commands)
+        print(json.dumps(commands))
         exit()
 
     for identifier, package in all_packages.items():
