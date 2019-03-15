@@ -16,7 +16,7 @@ def matches(constraint):
 def final(state):
     state = [all_packages[identifier] for identifier in state]
     return all(
-        p.satisfies(a[1:]) for p in state for a in add
+        any(p.satisfies(a[1:]) for p in state) for a in add
     ) and not any(
         p.satisfies(r[1:]) for p in state for r in remove
     ) and not (len(add) > 0 and len(state) == 0)
@@ -28,9 +28,10 @@ def hashed(state):
 
 def valid(state):
     state = [all_packages[identifier] for identifier in state]
+    # debug = [[[[x.satisfies(option) for x in state] for option in d] for d in p.depends] for p in state]
     return all(
         all(
-            all(
+            any(
                 any(x.satisfies(option) for x in state)
                 for option in d)
             for d in p.depends)
@@ -58,12 +59,14 @@ def remove_package(state, commands, package):
     state = state.copy()
     commands = commands.copy()
     state = [x for x in state if x != package]
-    commands.append("-%s" % package)
+    if package in initial:
+        commands.append("-%s" % package)
     commands = [x for x in commands if x != "+%s" % package]
     return state, commands
 
 
 def dfs(state, commands):
+    # print(state, commands)
     if not valid(state):
         return
 
@@ -113,4 +116,10 @@ if __name__ == "__main__":
     add = [x for x in constraints if x.startswith("+")]
     remove = [x for x in constraints if x.startswith("-")]
 
-    dfs(initial, [])
+    try:
+        dfs(initial, [])
+    except RecursionError:
+        print(json.dumps([]))
+
+    # no solution
+    print(json.dumps([]))
