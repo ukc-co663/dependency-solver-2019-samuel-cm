@@ -119,7 +119,7 @@ if __name__ == "__main__":
     try:
         dfs(initial, [])
     except RecursionError:
-        print(json.dumps([]))
+        pass
 
     # no solution
     print(json.dumps([]))
