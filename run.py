@@ -64,7 +64,6 @@ def remove_package(state, commands, package):
 
 
 def dfs(state, commands):
-    print(state, commands)
     if not valid(state):
         return
 
