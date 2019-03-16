@@ -3,8 +3,20 @@ import argparse
 import itertools
 import json
 import re
+import signal
 
 seen = []
+
+lowest_cost = -1
+best_commands = []
+
+
+class OutOfTime(Exception):
+    pass
+
+
+def timeout(sig, frame):
+    raise OutOfTime()
 
 
 def matches(constraint):
@@ -78,8 +90,13 @@ def dfs(state, commands):
         return
 
     if final(state):
-        print(json.dumps(commands))
-        exit()
+        global lowest_cost
+        global best_commands
+        c = cost(commands)
+        if lowest_cost < 0 or c < lowest_cost:
+            lowest_cost = c
+            best_commands = commands
+        return
 
     for identifier, package in all_packages.items():
         if identifier not in state:
@@ -104,6 +121,11 @@ if __name__ == "__main__":
     parser.add_argument("constraints")
     args = parser.parse_args()
 
+    signal.signal(signal.SIGALRM, timeout)
+
+    # 5 minutes minus 10 seconds just to be on the safe side
+    signal.alarm((5 * 60) - 10)
+
     with open(args.repo, "r") as f:
         repo = {}
         for x in json.load(f):
@@ -126,7 +148,12 @@ if __name__ == "__main__":
     try:
         dfs(initial, [])
     except RecursionError:
+        print(json.dumps(["recursion"]))
+        exit()
+    except OutOfTime:
         pass
 
-    # no solution
-    print(json.dumps([]))
+    if lowest_cost < 0:
+        print(json.dumps(["no_solution"]))
+    else:
+        print(json.dumps(best_commands))
