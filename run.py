@@ -98,27 +98,31 @@ def dfs(state, commands):
     else:
         seen.append(h)
 
+    if not valid(state):
+        return
+
+    if final(state):
+        global lowest_cost
+        global best_commands
+        c = cost(commands)
+
+        # if this solution is better, save it
+        if lowest_cost < 0 or c < lowest_cost:
+            lowest_cost = c
+            best_commands = commands
+        return
+
     for identifier, package in all_packages.items():
         if identifier not in state:
             state, commands = add_package(state, commands, identifier)
-        else:
+            dfs(state, commands)
             state, commands = remove_package(state, commands, identifier)
 
-        if not valid(state):
-            continue
-
-        if final(state):
-            global lowest_cost
-            global best_commands
-            c = cost(commands)
-
-            # if this solution is better, save it
-            if lowest_cost < 0 or c < lowest_cost:
-                lowest_cost = c
-                best_commands = commands
-            continue
-
-        dfs(state, commands)
+    for identifier, package in all_packages.items():
+        if identifier in state:
+            state, commands = remove_package(state, commands, identifier)
+            dfs(state, commands)
+            state, commands = add_package(state, commands, identifier)
 
     return state
 
