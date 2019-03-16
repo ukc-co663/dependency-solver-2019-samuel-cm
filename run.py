@@ -19,6 +19,7 @@ def timeout(sig, frame):
     raise OutOfTime()
 
 
+# all packages that match this constraint
 def matches(constraint):
     r = re.compile("([>=<]+)")
     c = re.split(r, constraint)
@@ -28,8 +29,10 @@ def matches(constraint):
 def final(state):
     state = [all_packages[identifier] for identifier in state]
     return all(
+        # make sure all + constraints are satisfied by a package
         any(p.satisfies(a[1:]) for p in state) for a in add
     ) and not any(
+        # make sure no packages exist that need to be removed
         p.satisfies(r[1:]) for p in state for r in remove
     ) and not (len(add) > 0 and len(state) == 0)
 
@@ -40,10 +43,14 @@ def hashed(state):
 
 def valid(state):
     state = [all_packages[identifier] for identifier in state]
-    # debug = [[[[x.satisfies(option) for x in state] for option in d] for d in p.depends] for p in state]
+
+    # do all packages have all their dependencies
     return all(
+        # are all dependencies met for this package
         all(
+            # is this dependency met by any of its options
             any(
+                # do any packages match this constraint
                 any(x.satisfies(option) for x in state)
                 for option in d)
             for d in p.depends)
@@ -62,8 +69,11 @@ def add_package(state, commands, package):
     state = state.copy()
     commands = commands.copy()
     state.append(package)
+
+    # don't install a package that is already in the initial state
     if package not in initial:
         commands.append("+%s" % package)
+
     commands = [x for x in commands if x != "-%s" % package]
     return state, commands
 
@@ -72,14 +82,16 @@ def remove_package(state, commands, package):
     state = state.copy()
     commands = commands.copy()
     state = [x for x in state if x != package]
+
+    # don't remove a package not in the initial state
     if package in initial:
         commands.append("-%s" % package)
+
     commands = [x for x in commands if x != "+%s" % package]
     return state, commands
 
 
 def dfs(state, commands):
-    # print(state, commands)
     h = hashed(state)
     if h in seen:
         return
@@ -93,6 +105,8 @@ def dfs(state, commands):
         global lowest_cost
         global best_commands
         c = cost(commands)
+
+        # if this solution is better, save it
         if lowest_cost < 0 or c < lowest_cost:
             lowest_cost = c
             best_commands = commands
