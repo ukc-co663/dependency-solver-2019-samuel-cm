@@ -19,6 +19,8 @@ class Package:
     def satisfies(self, constraint):
         r = re.compile("([>=<]+)")
         c = re.split(r, constraint)
+        if self.name != c[0]:
+            return False
         if len(c) > 1:
             if c[1] == "=":
                 return self.version == c[2]
@@ -32,7 +34,7 @@ class Package:
                 return self.version < c[2]
         else:
             # any version
-            return self.name == c[0]
+            return True
 
     def conflicts_with(self, package):
         return any([package.satisfies(x) for x in self.conflicts])

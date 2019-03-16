@@ -50,7 +50,8 @@ def add_package(state, commands, package):
     state = state.copy()
     commands = commands.copy()
     state.append(package)
-    commands.append("+%s" % package)
+    if package not in initial:
+        commands.append("+%s" % package)
     commands = [x for x in commands if x != "-%s" % package]
     return state, commands
 
@@ -67,6 +68,12 @@ def remove_package(state, commands, package):
 
 def dfs(state, commands):
     # print(state, commands)
+    h = hashed(state)
+    if h in seen:
+        return
+    else:
+        seen.append(h)
+
     if not valid(state):
         return
 
